@@ -1,0 +1,18 @@
+/dts-v1/;
+
+/ {
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	i2c@3f804000 {
+	    #address-cells = <1>;
+	    #size-cells = <0>;
+	    compatible = "bcm2835-i2c";
+	    clock-frequency = <100000>;
+	    tpm@20 {
+		    compatible = "infineon,slb9645tt";
+		    reg = <0x20>;
+	    };
+	};
+
+};
