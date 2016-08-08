@@ -19,6 +19,7 @@
 #include <asm/global_data.h>
 #include <dm/platform_data/serial_pl01x.h>
 #include <dm/platform_data/serial_bcm283x_mu.h>
+#include <dm/platform_data/i2c_bcm283x.h>
 #ifdef CONFIG_ARM64
 #include <asm/armv8/mmu.h>
 #endif
@@ -61,6 +62,16 @@ U_BOOT_DEVICE(bcm2837_serials) = {
 	.platdata = &serial_platdata,
 };
 #endif
+
+static const struct bcm283x_i2c_platdata i2c_platdata = {
+	.base = 0x3f804000,
+	.clock = 250000000,
+};
+
+U_BOOT_DEVICE(bcm2835_i2c) = {
+	.name = "i2c_bcm283x",
+	.platdata = &i2c_platdata,
+};
 
 struct msg_get_arm_mem {
 	struct bcm2835_mbox_hdr hdr;
