@@ -90,7 +90,7 @@ static void *parse_byte_string(char *bytes, uint8_t *data, size_t *count_ptr)
 static int report_return_code(int return_code)
 {
 	if (return_code) {
-		printf("Error: %d\n", return_code);
+		printf("TPM Error: %d. refer to tss/tpm_error.h\n", return_code);
 		return CMD_RET_FAILURE;
 	} else {
 		return CMD_RET_SUCCESS;
