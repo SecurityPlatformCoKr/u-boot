@@ -42,7 +42,7 @@
 #define BCM2835_I2C_CDIV_MIN    0x0002
 #define BCM2835_I2C_CDIV_MAX    0xFFFE
 
-#define BCM2835_I2C_TIMEOUT_us 100000
+#define BCM2835_I2C_TIMEOUT 100
 
 struct bcm2835_i2c_regs {
 	u32 c;
@@ -83,35 +83,41 @@ static int bcm2835_i2c_read_fifo(u32 base, struct i2c_msg *msg)
 		break;
 	    l = bcm2835_i2c_readl(base, BCM2835_I2C_FIFO);
 	    msg->buf[i] = (u8)l;
+	    udelay(100);
 	    debug("0x%02x ", l);
 	}
 	debug("\n");
 	return 0;
 }
 
+static void bcm2835_clear_status(u32 base)
+{
+    u32 clr = BCM2835_I2C_S_ERR | BCM2835_I2C_S_CLKT | BCM2835_I2C_S_DONE;
+    bcm2835_i2c_writel(base, BCM2835_I2C_S, clr); /* clear */
+}
+
 static u32 check_completion(u32 base, struct i2c_msg *msg)
 {
-    u32 err, clr;
     u32 s = bcm2835_i2c_readl(base, BCM2835_I2C_S);
-    err  = s & (BCM2835_I2C_S_CLKT | BCM2835_I2C_S_ERR);
-    clr = BCM2835_I2C_S_ERR | BCM2835_I2C_S_CLKT | BCM2835_I2C_S_DONE;
-    bcm2835_i2c_writel(base, BCM2835_I2C_S, clr); /* clear */
+    bcm2835_clear_status(base);
 
-    if (s & BCM2835_I2C_S_TA) {
-	return 0;
-    }
-    if (s & BCM2835_I2C_S_RXD) {
+    if (s & BCM2835_I2C_S_RXR) {
 	bcm2835_i2c_read_fifo(base, msg);
-	return s;
+	goto out;
     }
     if (s & BCM2835_I2C_S_DONE) {
-	return s;
+	if (msg->flags & I2C_M_RD) {
+	    bcm2835_i2c_read_fifo(base, msg);
+	}
+	goto out;
     }
-    if (err) {
-	return s;
-    }
+    if (s & BCM2835_I2C_S_TA) {
+	return 0;
+     }
 
-    return 0;
+out:
+//    bcm2835_clear_status(base);
+    return s;
 }
 
 /*
@@ -146,7 +152,7 @@ static void bcm2835_i2c_fill_txfifo(u32 base, struct i2c_msg *msg)
 static int bcm2835_i2c_xfer_msg(u32 base, struct i2c_msg *msg)
 {
 	u32 c, r = 0;
-	unsigned long time_left = BCM2835_I2C_TIMEOUT_us;
+	int time_left = BCM2835_I2C_TIMEOUT;
 
 	bcm2835_i2c_writel(base, BCM2835_I2C_C, BCM2835_I2C_C_CLEAR);
 	c = 0;
@@ -162,16 +168,16 @@ static int bcm2835_i2c_xfer_msg(u32 base, struct i2c_msg *msg)
 	bcm2835_i2c_writel(base, BCM2835_I2C_C, c);
 
 	while(time_left > 0) {
-		udelay(10);
-		time_left -= 10;
+		mdelay(1);
+		time_left -= 1;
 		r = check_completion(base, msg);
 		if (r) {
 			break;
 		}
 	}
 	bcm2835_i2c_writel(base, BCM2835_I2C_C, BCM2835_I2C_C_CLEAR);
-	if (time_left == 0) {
-	    debug("i2c transfer timed out\n");
+	if (time_left <= 0) {
+	    printf("i2c transfer timed out\n");
 	    return -1;
 	}
 	if (r & (BCM2835_I2C_S_ERR | BCM2835_I2C_S_CLKT)) {
