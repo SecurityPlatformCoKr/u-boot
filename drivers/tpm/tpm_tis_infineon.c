@@ -365,6 +365,8 @@ static int tpm_tis_i2c_recv_data(struct udevice *dev, u8 *buf, size_t count)
 				      &(buf[size]), burstcnt);
 		if (rc == 0)
 			size += burstcnt;
+		else if (rc < 0)
+			break;
 	}
 
 	return size;
