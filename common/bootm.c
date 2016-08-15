@@ -19,6 +19,7 @@
 #include <lzma/LzmaTypes.h>
 #include <lzma/LzmaDec.h>
 #include <lzma/LzmaTools.h>
+#include <sboot.h>
 #if defined(CONFIG_CMD_USB)
 #include <usb.h>
 #endif
@@ -65,6 +66,32 @@ static void boot_start_lmb(bootm_headers_t *images)
 #define lmb_reserve(lmb, base, size)
 static inline void boot_start_lmb(bootm_headers_t *images) { }
 #endif
+
+
+#ifdef CONFIG_SBOOT
+void bootm_sboot(void)
+{
+    printf("Sboot measuring ... ");
+
+    sboot_init();
+
+    sboot_export_extend_environment();
+
+    /* Measure loaded images (kernel, ramdisk, fdt) */
+    sboot_extend_os((uint8_t *)images.os.image_start, images.os.image_len);
+    sboot_extend_os((uint8_t *)images.rd_start, images.rd_end - images.rd_start);
+    sboot_extend_os((uint8_t *)images.initrd_start, images.initrd_end - images.initrd_start);
+    sboot_extend_os((uint8_t *)images.cmdline_start, images.cmdline_end - images.initrd_start);
+#ifdef CONFIG_OF_LIBFDT
+    sboot_extend_os((uint8_t *)images.ft_addr, images.ft_len);
+#endif
+
+    sboot_finish();
+}
+#else
+void bootm_sboot(void) {};
+#endif
+
 
 static int bootm_start(cmd_tbl_t *cmdtp, int flag, int argc,
 		       char * const argv[])
@@ -695,9 +722,11 @@ int do_bootm_states(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[],
 	}
 
 	/* Now run the OS! We hope this doesn't return */
-	if (!ret && (states & BOOTM_STATE_OS_GO))
+	if (!ret && (states & BOOTM_STATE_OS_GO)) {
+		bootm_sboot();
 		ret = boot_selected_os(argc, argv, BOOTM_STATE_OS_GO,
 				images, boot_fn);
+	}
 
 	/* Deal with any fallout */
 err:

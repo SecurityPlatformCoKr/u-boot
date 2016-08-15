@@ -66,6 +66,10 @@ config TPM
 	  for the low-level TPM interface, but only one TPM is supported at
 	  a time by the TPM library.
 
+config SBOOT
+	bool "Secure Boot Support"
+	depends on TPM
+
 menu "Hashing Support"
 
 config SHA1

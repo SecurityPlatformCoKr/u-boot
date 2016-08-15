@@ -44,6 +44,7 @@ obj-$(CONFIG_SUPPORT_EMMC_RPMB) += sha256.o
 obj-$(CONFIG_SHA256) += sha256.o
 obj-y	+= strmhz.o
 obj-$(CONFIG_TPM) += tpm.o
+obj-$(CONFIG_SBOOT) += sboot/
 obj-$(CONFIG_RBTREE)	+= rbtree.o
 obj-$(CONFIG_BITREVERSE) += bitrev.o
 obj-y += list_sort.o

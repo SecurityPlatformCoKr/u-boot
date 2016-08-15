@@ -13,6 +13,7 @@
 #include <bootretry.h>
 #include <cli.h>
 #include <watchdog.h>
+#include <sboot.h>
 
 DECLARE_GLOBAL_DATA_PTR;
 
@@ -473,13 +474,25 @@ static int cread_line(const char *const prompt, char *buf, unsigned int *len,
 
 int cli_readline(const char *const prompt)
 {
+	int result;
 	/*
 	 * If console_buffer isn't 0-length the user will be prompted to modify
 	 * it instead of entering it from scratch as desired.
 	 */
 	console_buffer[0] = '\0';
 
-	return cli_readline_into_buffer(prompt, console_buffer, 0);
+	result = cli_readline_into_buffer(prompt, console_buffer, 0);
+
+#if defined(CONFIG_SBOOT) && !defined(CONFIG_SBOOT_DISABLE_CONSOLE_EXTEND)
+	/* Must extend console PCR whether or not command was interpreted
+	 * or successful. If not, executable code may be introduced using
+	 * the console history buffer.
+	 */
+	sboot_extend_console(console_buffer, CONFIG_SYS_CBSIZE);
+#endif
+
+       return result;
+	 
 }
 
 

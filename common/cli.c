@@ -15,6 +15,7 @@
 #include <console.h>
 #include <fdtdec.h>
 #include <malloc.h>
+#include <sboot.h>
 
 DECLARE_GLOBAL_DATA_PTR;
 
@@ -28,6 +29,14 @@ DECLARE_GLOBAL_DATA_PTR;
  */
 int run_command(const char *cmd, int flag)
 {
+#if defined(CONFIG_SBOOT) && !defined(CONFIG_SBOOT_DISABLE_CONSOLE_EXTEND)
+	/* Must extend console PCR whether or not command was interpreted
+	 * or successful. If not, executable code may be introduced using
+	 * the console history buffer.
+	 */
+	sboot_extend_console(cmd, strlen(cmd));
+#endif
+
 #ifndef CONFIG_SYS_HUSH_PARSER
 	/*
 	 * cli_run_command can return 0 or 1 for success, so clean up
@@ -87,6 +96,14 @@ int run_command_list(const char *cmd, int len, int flag)
 		need_buff = strchr(cmd, '\n') != NULL;
 #endif
 	}
+
+#if defined(CONFIG_SBOOT) && !defined(CONFIG_SBOOT_DISABLE_CONSOLE_EXTEND)
+	/* Must extend console PCR whether or not command was interpreted
+	 * or successful. If not, executable code may be introduced using
+	 * the console history buffer.
+	 */
+	sboot_extend_console(cmd, len);
+#endif
 	if (need_buff) {
 		buff = malloc(len + 1);
 		if (!buff)

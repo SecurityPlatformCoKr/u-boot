@@ -15,6 +15,7 @@
 #include <search.h>
 #include <errno.h>
 #include <malloc.h>
+#include <sboot.h>
 
 DECLARE_GLOBAL_DATA_PTR;
 
@@ -192,6 +193,11 @@ int env_import(const char *buf, int check)
 {
 	env_t *ep = (env_t *)buf;
 	int ret;
+
+
+#if defined(CONFIG_SBOOT) && !defined(CONFIG_SBOOT_DISABLE_ENV_EXTEND)
+	sboot_extend_environment(buf, CONFIG_ENV_SIZE);
+#endif
 
 	if (check) {
 		uint32_t crc;
