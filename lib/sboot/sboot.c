@@ -112,6 +112,7 @@ uint8_t sboot_extend_console(const char *buffer, uint32_t max_size)
 	uint8_t digest[20], out_digest[20];
 	sha1_context ctx;
 
+	sboot_init();
 	/* sboot will extend the console up to the max_size given to the command.
 	 * It is possible that input validation did not happen on buffer, thus
 	 * max_size is an explicit parameter to the memory compare.
@@ -146,6 +147,7 @@ uint8_t sboot_extend_environment(const char *buffer, uint32_t size)
 	uint8_t digest[20], out_digest[20];
 	sha1_context ctx;
 
+	sboot_init();
 	debug("sboot: Extending env with \"%s\" (size=%d).\n", buffer, size);
 
 	sha1_starts(&ctx); /* could be 1 function, sha1_csum */
@@ -177,6 +179,7 @@ uint8_t sboot_extend_os(const uint8_t* start, uint32_t size)
 	if (size == 0)
 		return SBOOT_SUCCESS;
 
+	sboot_init();
 	debug("sboot: Extending OS (addr=%x, size=%d)\n", (uint32_t) start, size);
 
 	sha1_starts(&ctx);
